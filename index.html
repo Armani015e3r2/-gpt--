@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #111;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: #fff;
+    }
+
+    .calculator {
+      width: 100%;
+      max-width: 420px;
+      background: #1c1c1e;
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .display {
+      background: #000;
+      border-radius: 16px;
+      padding: 16px 12px;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .display-expression {
+      font-size: 1.1rem;
+      color: #999;
+      word-wrap: break-word;
+      width: 100%;
+      text-align: right;
+      min-height: 24px;
+    }
+
+    .display-result {
+      font-size: 2.4rem;
+      font-weight: 500;
+      word-wrap: break-word;
+      width: 100%;
+      text-align: right;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 16px;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+    }
+
+    .btn-gray {
+      background: #a5a5a5;
+      color: #000;
+    }
+
+    .btn-dark {
+      background: #333333;
+      color: #fff;
+    }
+
+    .btn-orange {
+      background: #ff9f0a;
+      color: #fff;
+    }
+
+    .btn-zero {
+      grid-column: span 2;
+      justify-content: flex-start;
+      padding-left: 28px;
+    }
+
+    .btn-disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .btn:focus {
+      outline: none;
+    }
+
+    @media (max-width: 400px) {
+      .display-result {
+        font-size: 2rem;
+      }
+      .btn {
+        padding: 14px;
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <div class="display-expression" id="expression"></div>
+      <div class="display-result" id="result">0</div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn btn-gray" data-action="clear">AC</button>
+      <button class="btn btn-gray" data-action="delete">⌫</button>
+      <button class="btn btn-gray" data-value="%">%</button>
+      <button class="btn btn-orange" data-value="/">÷</button>
+
+      <button class="btn btn-dark" data-value="7">7</button>
+      <button class="btn btn-dark" data-value="8">8</button>
+      <button class="btn btn-dark" data-value="9">9</button>
+      <button class="btn btn-orange" data-value="*">×</button>
+
+      <button class="btn btn-dark" data-value="4">4</button>
+      <button class="btn btn-dark" data-value="5">5</button>
+      <button class="btn btn-dark" data-value="6">6</button>
+      <button class="btn btn-orange" data-value="-">−</button>
+
+      <button class="btn btn-dark" data-value="1">1</button>
+      <button class="btn btn-dark" data-value="2">2</button>
+      <button class="btn btn-dark" data-value="3">3</button>
+      <button class="btn btn-orange" data-value="+">+</button>
+
+      <button class="btn btn-dark btn-zero" data-value="0">0</button>
+      <button class="btn btn-dark" data-value=".">.</button>
+      <button class="btn btn-orange" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <script>
+    const expressionEl = document.getElementById('expression');
+    const resultEl = document.getElementById('result');
+    const buttons = document.querySelector('.buttons');
+
+    let currentExpression = '';
+    let justCalculated = false;
+
+    function updateDisplay() {
+      expressionEl.textContent = currentExpression;
+    }
+
+    function appendValue(value) {
+      if (justCalculated) {
+        // если только что было вычисление и нажата цифра/точка — начинаем новое выражение
+        if (/[0-9.]/.test(value)) {
+          currentExpression = '';
+        }
+        justCalculated = false;
+      }
+
+      const lastChar = currentExpression.slice(-1);
+
+      // Не даём вводить два оператора подряд
+      if (/[+\-*/%]/.test(value) && /[+\-*/%]/.test(lastChar)) {
+        currentExpression = currentExpression.slice(0, -1) + value;
+      } else {
+        currentExpression += value;
+      }
+
+      updateDisplay();
+    }
+
+    function clearAll() {
+      currentExpression = '';
+      resultEl.textContent = '0';
+      updateDisplay();
+      justCalculated = false;
+    }
+
+    function deleteLast() {
+      if (justCalculated) {
+        // после вычисления удаление сбрасывает результат
+        clearAll();
+        return;
+      }
+      currentExpression = currentExpression.slice(0, -1);
+      updateDisplay();
+    }
+
+    function calculate() {
+      if (!currentExpression) return;
+
+      try {
+        // простая защита: считаем только числа, операторы и точку
+        if (!/^[0-9+\-*/%.() ]+$/.test(currentExpression)) {
+          throw new Error('Invalid characters');
+        }
+
+        let expr = currentExpression;
+
+        // обработка процента (например 50% -> 0.5)
+        // заменяем "число%" на "(число/100)"
+        expr = expr.replace(/([0-9.]+)%/g, '($1/100)');
+
+        const result = eval(expr);
+
+        if (result === Infinity || result === -Infinity || isNaN(result)) {
+          throw new Error('Math error');
+        }
+
+        resultEl.textContent = Number(result.toFixed(10)).toString();
+        justCalculated = true;
+      } catch (e) {
+        resultEl.textContent = 'Ошибка';
+        justCalculated = true;
+      }
+    }
+
+    buttons.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!target.classList.contains('btn')) return;
+
+      const value = target.getAttribute('data-value');
+      const action = target.getAttribute('data-action');
+
+      if (action === 'clear') {
+        clearAll();
+        return;
+      }
+
+      if (action === 'delete') {
+        deleteLast();
+        return;
+      }
+
+      if (action === 'equals') {
+        calculate();
+        return;
+      }
+
+      if (value !== null) {
+        appendValue(value);
+      }
+    });
+
+    // Поддержка клавиатуры (не обязательно, но удобно на ПК)
+    window.addEventListener('keydown', (e) => {
+      const key = e.key;
+
+      if ((key >= '0' && key <= '9') || key === '.') {
+        appendValue(key);
+      } else if (['+', '-', '*', '/', '%'].includes(key)) {
+        appendValue(key);
+      } else if (key === 'Enter' || key === '=') {
+        e.preventDefault();
+        calculate();
+      } else if (key === 'Backspace') {
+        deleteLast();
+      } else if (key.toLowerCase() === 'c') {
+        clearAll();
+      }
+    });
+  </script>
+</body>
+</html>
